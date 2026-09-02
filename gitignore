@@ -1,15 +1,20 @@
 # Nunca subir movimientos ni reportes del broker
 data/
 *.csv
+*.CSV
 *.xlsx
 *.xlsm
-*.CSV
 
-# Copias locales del libro con datos adentro
+# Cache de precios generado en tiempo de ejecucion
+market_cache.json
+
+# Copia local del libro HTML con datos embebidos
 libro-inversiones.html
 
-# Basura del sistema
+# Entornos y basura del sistema
+.venv/
+venv/
+__pycache__/
+*.pyc
 .DS_Store
 Thumbs.db
-.venv/
-__pycache__/
