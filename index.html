@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libro de inversiones</title>
+<style>
+  :root{
+    --ground:#EDEEE9; --sheet:#FBFBF8; --ink:#16232E; --soft:#6B7A85;
+    --rule:#CDD2CC; --gain:#0F6E5C; --loss:#A63A2B; --mark:#B8891F;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --serif:ui-serif,Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+       font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 28px 80px}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+  .g{color:var(--gain)} .l{color:var(--loss)}
+
+  /* masthead */
+  header{display:flex;justify-content:space-between;align-items:baseline;
+         padding:22px 0 14px;border-bottom:2px solid var(--ink);flex-wrap:wrap;gap:10px}
+  header h1{font-family:var(--serif);font-size:22px;font-weight:400;margin:0;letter-spacing:.01em}
+  header .meta{font-size:12.5px;color:var(--soft)}
+
+  /* hero ledger */
+  .hero{display:grid;grid-template-columns:minmax(280px,1.15fr) 1fr;gap:36px;
+        padding:34px 0 30px;border-bottom:1px solid var(--rule)}
+  .balance{font-family:var(--serif);font-size:clamp(46px,7vw,74px);line-height:1;margin:0}
+  .balance-note{margin:12px 0 0;font-size:14px;color:var(--soft)}
+  .delta{font-size:18px;font-family:var(--serif)}
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;align-self:end}
+  .fact{display:flex;justify-content:space-between;gap:12px;padding:7px 0;
+        border-bottom:1px solid var(--rule);font-size:13.5px}
+  .fact span:first-child{color:var(--soft)}
+  .fact span:last-child{font-family:var(--serif);font-size:15px}
+
+  /* sections */
+  section{padding:30px 0;border-bottom:1px solid var(--rule)}
+  h2{font-family:var(--serif);font-size:17px;font-weight:400;margin:0 0 4px}
+  .lede{font-size:13px;color:var(--soft);margin:0 0 18px;max-width:62ch}
+
+  /* ledger table */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{font-size:11.5px;font-weight:600;color:var(--soft);text-align:right;
+     padding:0 0 7px;border-bottom:1px solid var(--ink)}
+  th:first-child{text-align:left}
+  td{padding:9px 0;border-bottom:1px solid var(--rule);text-align:right}
+  td:first-child{text-align:left;font-weight:600}
+  tbody tr:hover{background:var(--sheet)}
+  tfoot td{border-bottom:none;border-top:2px solid var(--ink);font-weight:600;padding-top:11px}
+  input.px{width:88px;padding:5px 7px;text-align:right;font:inherit;font-size:13.5px;
+     font-variant-numeric:tabular-nums;border:1px solid var(--rule);border-radius:2px;
+     background:var(--sheet);color:var(--mark)}
+  input.px:focus{outline:2px solid var(--mark);outline-offset:1px;border-color:transparent}
+
+  /* allocation ribbon */
+  .ribbon{display:flex;height:34px;width:100%;margin:6px 0 14px;overflow:hidden}
+  .ribbon div{position:relative}
+  .ribbon div:not(:last-child){border-right:1px solid var(--ground)}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 20px;font-size:12.5px;color:var(--soft)}
+  .legend b{color:var(--ink);font-weight:600}
+  .swatch{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:baseline}
+
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+  svg{width:100%;height:auto;display:block}
+  .ax{font-size:10.5px;fill:var(--soft)}
+
+  /* drop zone */
+  .drop{margin-top:26px;padding:26px;border:1.5px dashed var(--rule);border-radius:3px;
+        text-align:center;color:var(--soft);font-size:13.5px;background:var(--sheet)}
+  .drop.hot{border-color:var(--mark);color:var(--ink);background:#FAF4E4}
+  .drop b{color:var(--ink)}
+  .btn{font:inherit;font-size:13px;padding:7px 14px;border:1px solid var(--ink);
+       background:transparent;color:var(--ink);border-radius:2px;cursor:pointer}
+  .btn:hover{background:var(--ink);color:var(--ground)}
+  .status{margin-top:12px;font-size:12.5px;color:var(--soft);min-height:1.2em}
+
+  .gate{padding:44px 0 34px;border-bottom:1px solid var(--rule)}
+  .gate-h{font-family:var(--serif);font-size:clamp(26px,4vw,38px);font-weight:400;margin:0 0 16px;max-width:20ch}
+  .gate-p{font-size:14.5px;color:var(--soft);margin:0 0 10px;max-width:60ch}
+
+  @media (max-width:760px){
+    .wrap{padding:0 16px 60px}
+    .hero{grid-template-columns:1fr;gap:24px}
+    .facts{align-self:auto}
+    .charts{grid-template-columns:1fr}
+    table{font-size:13px}
+    .hide-sm{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Libro de inversiones</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="gate" id="gate">
+    <h2 class="gate-h">Cargá tus movimientos para empezar</h2>
+    <p class="gate-p">Este libro no guarda nada. Cada vez que lo abrís, elegís los CSV que
+       descargaste de Hapi y se procesan acá mismo, en tu navegador. Al cerrar la pestaña
+       se borra todo.</p>
+    <p class="gate-p">Tus archivos nunca salen de esta computadora: no se suben a ningún
+       servidor, ni al mío ni al de GitHub.</p>
+  </div>
+
+  <div class="hero" id="hero" hidden>
+    <div>
+      <p class="balance num" id="balance">—</p>
+      <p class="balance-note">
+        <span class="delta num" id="delta"></span><br>
+        <span id="balance-sub"></span>
+      </p>
+    </div>
+    <div class="facts" id="facts"></div>
+  </div>
+
+  <section id="app" hidden>
+    <h2>Posiciones abiertas</h2>
+    <p class="lede">Escribí el precio de cierre en la columna ámbar y todo el libro se recalcula.
+       Los precios quedan guardados en este navegador.</p>
+    <table>
+      <thead><tr>
+        <th>Activo</th><th class="hide-sm">Acciones</th><th class="hide-sm">Costo prom.</th>
+        <th>Invertido</th><th>Precio</th><th>Valor</th><th>P&amp;L</th><th>%</th>
+      </tr></thead>
+      <tbody id="pos"></tbody>
+      <tfoot id="posfoot"></tfoot>
+    </table>
+    <div style="margin-top:22px">
+      <div class="ribbon" id="ribbon"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </section>
+
+  <section class="app" hidden>
+    <div class="charts">
+      <div>
+        <h2>Resultado por activo</h2>
+        <p class="lede">Flotante de lo que tenés abierto hoy.</p>
+        <div id="chart-pl"></div>
+      </div>
+      <div>
+        <h2>Ganancia realizada acumulada</h2>
+        <p class="lede">Cada venta cerrada, sumada en el tiempo.</p>
+        <div id="chart-cum"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="app" hidden>
+    <h2>Movimiento mensual</h2>
+    <p class="lede">Resultado de ventas contra comisiones pagadas, mes a mes.</p>
+    <div id="chart-mes"></div>
+  </section>
+
+  <section style="border-bottom:none">
+    <h2 id="drop-h">Seleccionar archivos</h2>
+    <p class="lede" id="drop-p">Soltá acá todos tus CSV de Hapi. Se combinan sin duplicar filas
+       y el libro se arma al instante.</p>
+    <div class="drop" id="drop">
+      <b>Soltá acá tus archivos .csv</b><br>o
+      <button class="btn" id="pick" style="margin-top:8px">Elegir archivos</button>
+      <input type="file" id="file" accept=".csv" multiple hidden>
+    </div>
+    <div class="status" id="status"></div>
+    <p style="font-size:12.5px;color:var(--soft);margin-top:18px">
+      Método de costeo: costo promedio ponderado, con ajuste por splits.
+      Los dividendos vienen netos de retención. Nada de esto es asesoría de inversión.
+      <button class="btn" id="reset" style="margin-left:10px">Borrar datos de esta sesión</button>
+    </p>
+  </section>
+
+</div>
+
+<script>
+const RAW = [];          // sin datos embebidos: nada del historial vive en este archivo
+const SEED_PX = {};
+const EXCL = new Set(["","ISPAZ","2015086","NAN"]);
+const PAL = ["#16232E","#0F6E5C","#B8891F","#5A7184","#A63A2B","#3F6E4F","#8A7B5C","#2E4A5E","#96703A"];
+
+let movs = RAW.slice();
+let prices = {};
+
+const S = { // helpers de formato
+  usd: v => (v<0?"−":"")+"$"+Math.abs(v).toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2}),
+  usd0: v => (v<0?"−":"")+"$"+Math.abs(v).toLocaleString("es-PE",{maximumFractionDigits:0}),
+  pct: v => (v>=0?"+":"−")+Math.abs(v*100).toFixed(1)+"%",
+  qty: v => v.toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:5})
+};
+const cls = v => v>0?"g":(v<0?"l":"");
+
+/* ---------- almacenamiento ---------- */
+function load(){
+  try{
+    const p = sessionStorage.getItem("sesion.precios");
+    prices = p ? JSON.parse(p) : Object.assign({}, SEED_PX);
+    const m = sessionStorage.getItem("sesion.movs");
+    if(m) movs = JSON.parse(m);
+  }catch(e){ prices = Object.assign({}, SEED_PX); }
+}
+function save(){
+  try{
+    sessionStorage.setItem("sesion.precios", JSON.stringify(prices));
+    sessionStorage.setItem("sesion.movs", JSON.stringify(movs));
+  }catch(e){}
+}
+
+/* ---------- motor: costo promedio + splits ---------- */
+function engine(rows){
+  const p = {}, sales = [];
+  let aportes=0, prime=0, divs=0, fees=0, trades=0;
+  // orden por fecha, luego hora real de la operacion, luego orden de llegada
+  const ord = rows.map((r,i)=>[r,i]).sort((a,b)=>{
+    const A=a[0], B=b[0];
+    if(A[0]!==B[0]) return A[0]<B[0] ? -1 : 1;
+    const ta=A[10]||"", tb=B[10]||"";
+    if(ta!==tb) return ta<tb ? -1 : 1;
+    return a[1]-b[1];
+  }).map(x=>x[0]);
+
+  for(const r of ord){
+    const [fecha,tipo,sym,desc,act,qty,price,fee,net,dir] = r;   // r[10] = timestamp, solo para ordenar
+    const esPrime = desc.includes("PRIME");
+    if(desc.includes("JOURNAL")){ esPrime ? prime += Math.abs(net) : aportes += net; }
+    if(tipo==="TRADES"){ fees += fee; trades++; }
+    if(EXCL.has(sym)) continue;
+
+    if(!p[sym]) p[sym] = {qty:0,cost:0,avg:0,real:0};
+    const s = p[sym];
+
+    if(tipo==="POSITION_ADJUSTMENTS"){
+      s.qty += (dir==="OUTGOING" ? -Math.abs(qty) : Math.abs(qty));
+      s.avg = s.qty>1e-7 ? s.cost/s.qty : (s.qty=0,s.cost=0,0);
+      continue;
+    }
+    if(tipo==="MONEY_MOVEMENTS" && !esPrime){ divs += net; continue; }
+
+    const q = Math.abs(qty);
+    const buy  = ["BUY","DIVIDEND REINVEST","REINVESTMENT"].includes(act);
+    const sell = act.includes("SELL")||act.includes("LIQ")||desc.includes("LIQ")||desc.includes("CASH IN LIEU");
+
+    if(buy){ s.cost += q*price; s.qty += q; if(s.qty>0) s.avg = s.cost/s.qty; }
+    else if(sell && s.qty>0){
+      const pl = (price - s.avg)*q;
+      s.real += pl;
+      sales.push({fecha, sym, qty:q, price, avg:s.avg, pl});
+      s.qty -= q; s.cost -= s.avg*q;
+      if(s.qty < 1e-7){ s.qty=0; s.cost=0; }
+    }
+  }
+  const open = Object.entries(p).filter(([,v])=>v.qty>1e-7)
+      .map(([sym,v])=>({sym, qty:v.qty, avg:v.avg, cost:v.qty*v.avg}))
+      .sort((a,b)=>b.cost-a.cost);
+  const realizado = sales.reduce((a,b)=>a+b.pl,0);
+  return {open, sales, realizado, aportes, prime, divs, fees, trades,
+          ultima: ord.length ? ord[ord.length-1][0] : "—"};
+}
+
+/* ---------- render ---------- */
+function px(sym, avg){ const v = prices[sym]; return (typeof v==="number" && v>0) ? v : avg; }
+
+function render(){
+  const hayDatos = movs.length > 0;
+  document.getElementById("gate").hidden = hayDatos;
+  document.getElementById("hero").hidden = !hayDatos;
+  document.getElementById("app").hidden  = !hayDatos;
+  document.querySelectorAll("section.app").forEach(s => s.hidden = !hayDatos);
+  document.getElementById("drop-h").textContent = hayDatos ? "Agregar más movimientos" : "Seleccionar archivos";
+  document.getElementById("drop-p").textContent = hayDatos
+    ? "Soltá otro CSV para sumarlo a esta sesión. Las filas repetidas se descartan solas."
+    : "Soltá acá todos tus CSV de Hapi. Se combinan sin duplicar filas y el libro se arma al instante.";
+  if(!hayDatos){
+    document.getElementById("meta").textContent = "Ningún movimiento cargado";
+    return;
+  }
+  const m = engine(movs);
+  const rows = m.open.map(o=>{
+    const price = px(o.sym,o.avg), val = o.qty*price;
+    return {...o, price, val, pl: val-o.cost, plp: o.cost? (val-o.cost)/o.cost : 0};
+  });
+  const invert = rows.reduce((a,b)=>a+b.cost,0);
+  const valor  = rows.reduce((a,b)=>a+b.val,0);
+  const flot   = valor - invert;
+  const caja   = m.aportes - m.prime + m.realizado + m.divs - invert;
+  const balance= caja + valor;
+  const neto   = m.realizado + flot + m.divs - m.fees - m.prime;
+  const wins   = m.sales.filter(s=>s.pl>0).length;
+
+  document.getElementById("meta").textContent =
+    "Último movimiento " + m.ultima + " · " + movs.length + " registros";
+
+  document.getElementById("balance").textContent = S.usd(balance);
+  const dEl = document.getElementById("delta");
+  const ret = m.aportes ? balance/m.aportes - 1 : 0;
+  dEl.textContent = S.pct(ret) + " sobre el capital aportado";
+  dEl.className = "delta num " + cls(ret);
+  document.getElementById("balance-sub").textContent =
+    "Aportaste " + S.usd(m.aportes) + " y hoy el libro vale " + S.usd(balance) + ".";
+
+  document.getElementById("facts").innerHTML = [
+    ["Ganancia realizada", m.realizado, 1],
+    ["Ganancia flotante", flot, 1],
+    ["Beneficio neto", neto, 1],
+    ["Dividendos cobrados", m.divs, 0],
+    ["Liquidez disponible", caja, 0],
+    ["Invertido hoy", invert, 0],
+    ["Comisiones + Prime", -(m.fees+m.prime), 0],
+    ["Aciertos", null, 0]
+  ].map(([k,v,color])=>{
+    const txt = v===null ? wins+" de "+m.sales.length+" ventas" : S.usd(v);
+    return `<div class="fact"><span>${k}</span><span class="num ${color&&v!==null?cls(v):''}">${txt}</span></div>`;
+  }).join("");
+
+  // tabla
+  document.getElementById("pos").innerHTML = rows.map(r=>`
+    <tr>
+      <td>${r.sym}</td>
+      <td class="num hide-sm">${S.qty(r.qty)}</td>
+      <td class="num hide-sm">${S.usd(r.avg)}</td>
+      <td class="num">${S.usd(r.cost)}</td>
+      <td><input class="px num" type="number" step="0.01" min="0"
+                 data-sym="${r.sym}" value="${r.price.toFixed(2)}"
+                 aria-label="Precio de ${r.sym}"></td>
+      <td class="num">${S.usd(r.val)}</td>
+      <td class="num ${cls(r.pl)}">${S.usd(r.pl)}</td>
+      <td class="num ${cls(r.pl)}">${S.pct(r.plp)}</td>
+    </tr>`).join("");
+  document.getElementById("posfoot").innerHTML = `
+    <tr><td>Total</td><td class="hide-sm"></td><td class="hide-sm"></td>
+      <td class="num">${S.usd(invert)}</td><td></td>
+      <td class="num">${S.usd(valor)}</td>
+      <td class="num ${cls(flot)}">${S.usd(flot)}</td>
+      <td class="num ${cls(flot)}">${S.pct(invert?flot/invert:0)}</td></tr>`;
+
+  document.querySelectorAll("input.px").forEach(i=>{
+    i.addEventListener("change", e=>{
+      const v = parseFloat(e.target.value);
+      if(!isNaN(v) && v>0){ prices[e.target.dataset.sym] = v; save(); render(); }
+    });
+  });
+
+  // cinta de asignación
+  document.getElementById("ribbon").innerHTML = rows.map((r,i)=>
+    `<div style="width:${valor?(r.val/valor*100):0}%;background:${PAL[i%PAL.length]}"
+          title="${r.sym}: ${S.usd(r.val)}"></div>`).join("");
+  document.getElementById("legend").innerHTML = rows.map((r,i)=>
+    `<span><i class="swatch" style="background:${PAL[i%PAL.length]}"></i><b>${r.sym}</b>
+     ${valor?(r.val/valor*100).toFixed(1):0}%</span>`).join("");
+
+  barras("chart-pl", rows.map(r=>({label:r.sym, value:r.pl})));
+  linea("chart-cum", m.sales);
+  mensual("chart-mes", m.sales, movs);
+}
+
+/* ---------- gráficos SVG ---------- */
+function barras(id, data){
+  const W=520, rowH=26, pad=54, H=data.length*rowH+22;
+  const max = Math.max(1, ...data.map(d=>Math.abs(d.value)));
+  const mid = pad + (W-pad-14)/2, half=(W-pad-14)/2;
+  const bars = data.map((d,i)=>{
+    const w = Math.abs(d.value)/max*half, y=i*rowH+6;
+    const x = d.value>=0 ? mid : mid-w;
+    const col = d.value>=0 ? "var(--gain)" : "var(--loss)";
+    const tx = d.value>=0 ? mid+w+5 : mid-w-5;
+    return `<text class="ax" x="${pad-8}" y="${y+13}" text-anchor="end" fill="var(--ink)">${d.label}</text>
+      <rect x="${x}" y="${y}" width="${w}" height="${rowH-11}" fill="${col}"></rect>
+      <text class="ax" x="${tx}" y="${y+13}" text-anchor="${d.value>=0?'start':'end'}">${S.usd0(d.value)}</text>`;
+  }).join("");
+  document.getElementById(id).innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Resultado por activo">
+       <line x1="${mid}" y1="0" x2="${mid}" y2="${H-14}" stroke="var(--rule)"></line>${bars}</svg>`;
+}
+
+function linea(id, sales){
+  const W=520,H=210,L=52,B=26;
+  if(!sales.length){ document.getElementById(id).innerHTML=""; return; }
+  let acc=0; const pts = sales.map(s=>{acc+=s.pl; return {d:s.fecha, v:acc};});
+  const min = Math.min(0, ...pts.map(p=>p.v)), max = Math.max(...pts.map(p=>p.v));
+  const X = i => L + i/(pts.length-1||1)*(W-L-10);
+  const Y = v => H-B - (v-min)/((max-min)||1)*(H-B-14);
+  const path = pts.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.v).toFixed(1)).join(" ");
+  const area = path+` L ${X(pts.length-1)} ${Y(0)} L ${X(0)} ${Y(0)} Z`;
+  const ticks = [min, (min+max)/2, max].map(v=>
+    `<line x1="${L}" y1="${Y(v)}" x2="${W-10}" y2="${Y(v)}" stroke="var(--rule)"></line>
+     <text class="ax" x="${L-8}" y="${Y(v)+3.5}" text-anchor="end">${S.usd0(v)}</text>`).join("");
+  document.getElementById(id).innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ganancia realizada acumulada">${ticks}
+      <path d="${area}" fill="var(--gain)" opacity=".10"></path>
+      <path d="${path}" fill="none" stroke="var(--gain)" stroke-width="2"></path>
+      <text class="ax" x="${L}" y="${H-8}">${pts[0].d}</text>
+      <text class="ax" x="${W-10}" y="${H-8}" text-anchor="end">${pts[pts.length-1].d}</text></svg>`;
+}
+
+function mensual(id, sales, rows){
+  const gan={}, com={};
+  sales.forEach(s=>{const m=s.fecha.slice(0,7); gan[m]=(gan[m]||0)+s.pl;});
+  rows.forEach(r=>{ if(r[1]==="TRADES"){const m=r[0].slice(0,7); com[m]=(com[m]||0)+r[7];} });
+  const meses = [...new Set([...Object.keys(gan),...Object.keys(com)])].sort().slice(-18);
+  if(!meses.length){ document.getElementById(id).innerHTML=""; return; }
+  const W=1040,H=230,L=58,B=40;
+  const vals = meses.flatMap(m=>[gan[m]||0, -(com[m]||0)]);
+  const min=Math.min(0,...vals), max=Math.max(1,...vals);
+  const Y = v => H-B - (v-min)/((max-min)||1)*(H-B-16);
+  const bw = (W-L-14)/meses.length;
+  const body = meses.map((m,i)=>{
+    const x=L+i*bw, g=gan[m]||0, c=-(com[m]||0), y0=Y(0);
+    const rg = `<rect x="${x+bw*0.14}" y="${Math.min(Y(g),y0)}" width="${bw*0.42}"
+                 height="${Math.max(1,Math.abs(Y(g)-y0))}" fill="${g>=0?'var(--gain)':'var(--loss)'}"></rect>`;
+    const rc = `<rect x="${x+bw*0.58}" y="${Math.min(Y(c),y0)}" width="${bw*0.26}"
+                 height="${Math.max(1,Math.abs(Y(c)-y0))}" fill="var(--mark)" opacity=".8"></rect>`;
+    const lb = (meses.length<=14||i%2===0)
+      ? `<text class="ax" x="${x+bw/2}" y="${H-16}" text-anchor="middle">${m.slice(2)}</text>`:"";
+    return rg+rc+lb;
+  }).join("");
+  const ticks=[min,0,max].map(v=>
+    `<line x1="${L}" y1="${Y(v)}" x2="${W-14}" y2="${Y(v)}" stroke="var(--rule)"></line>
+     <text class="ax" x="${L-8}" y="${Y(v)+3.5}" text-anchor="end">${S.usd0(v)}</text>`).join("");
+  document.getElementById(id).innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Movimiento mensual">${ticks}${body}
+      <text class="ax" x="${L}" y="14"><tspan fill="var(--gain)">■</tspan> ganancia de ventas
+        <tspan fill="var(--mark)" dx="14">■</tspan> comisiones</text></svg>`;
+}
+
+/* ---------- importar CSV ---------- */
+function parseLine(line){
+  const out=[]; let buf="", q=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){ if(q && line[i+1]==='"'){buf+='"';i++;} else q=!q; }
+    else if(c==="," && !q){ out.push(buf); buf=""; }
+    else buf+=c;
+  }
+  out.push(buf); return out;
+}
+const toNum = s => { const t=String(s).replace(/[$,\s"]/g,""); const v=parseFloat(t); return isNaN(v)?0:v; };
+function toDate(s){
+  s=String(s).trim().replace(/"/g,"");
+  let m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);        if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return null;
+}
+function importar(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(lines.length<2) return 0;
+  let n=0;
+  const seen = new Set(movs.map(r=>r.join("\u0001")));
+  for(let i=1;i<lines.length;i++){
+    const c = parseLine(lines[i]);
+    if(c.length<16) continue;
+    const f = toDate(c[2]) || toDate(c[3]);
+    if(!f) continue;
+    const row = [f, c[0].trim().toUpperCase(), c[6].trim().toUpperCase(),
+      c[7].trim().slice(0,70).toUpperCase(), c[8].trim().toUpperCase(),
+      Math.round(toNum(c[9])*1e6)/1e6, Math.round(toNum(c[10])*1e4)/1e4,
+      Math.round((toNum(c[11])+toNum(c[12]))*1e4)/1e4,
+      Math.round(toNum(c[13])*100)/100, c[15].trim().toUpperCase(),
+      c[5].trim().replace(/"/g,"")];
+    const k = row.join("\u0001");
+    if(!seen.has(k)){ seen.add(k); movs.push(row); n++; }
+  }
+  return n;
+}
+
+/* ---------- eventos ---------- */
+const drop = document.getElementById("drop"), fileEl = document.getElementById("file");
+const status = document.getElementById("status");
+
+function handle(files){
+  let total=0, done=0;
+  const list = [...files].filter(f=>/\.csv$/i.test(f.name));
+  if(!list.length){ status.textContent = "Esos archivos no son .csv. Descargá el reporte de transacciones desde Hapi."; return; }
+  list.forEach(f=>{
+    const rd = new FileReader();
+    rd.onload = e => {
+      try{ total += importar(e.target.result); }
+      catch(err){ status.textContent = "No pude leer "+f.name+". Revisá que sea el CSV original de Hapi."; }
+      if(++done === list.length){
+        save(); render();
+        status.textContent = total>0
+          ? total+" movimientos nuevos agregados. El libro ya está actualizado."
+          : "Nada nuevo: esos movimientos ya estaban cargados.";
+      }
+    };
+    rd.onerror = () => { status.textContent = "No pude abrir "+f.name+"."; };
+    rd.readAsText(f);
+  });
+}
+document.getElementById("pick").addEventListener("click", ()=>fileEl.click());
+fileEl.addEventListener("change", e=>handle(e.target.files));
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.add("hot"); }));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.remove("hot"); }));
+drop.addEventListener("drop", e=>handle(e.dataTransfer.files));
+document.getElementById("reset").addEventListener("click", ()=>{
+  movs = []; prices = {};
+  try{ sessionStorage.removeItem("sesion.movs"); sessionStorage.removeItem("sesion.precios"); }catch(e){}
+  render(); status.textContent = "Datos borrados. Volvé a cargar tus CSV cuando quieras.";
+});
+
+load(); render();
+</script>
+</body>
+</html>

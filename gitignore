@@ -1,0 +1,15 @@
+# Nunca subir movimientos ni reportes del broker
+data/
+*.csv
+*.xlsx
+*.xlsm
+*.CSV
+
+# Copias locales del libro con datos adentro
+libro-inversiones.html
+
+# Basura del sistema
+.DS_Store
+Thumbs.db
+.venv/
+__pycache__/
